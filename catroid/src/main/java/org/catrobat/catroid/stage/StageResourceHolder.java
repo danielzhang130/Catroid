@@ -33,7 +33,6 @@ import android.nfc.NfcAdapter;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.speech.SpeechRecognizer;
 import android.text.Html;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -86,6 +85,7 @@ import static android.content.Context.VIBRATOR_SERVICE;
 import static org.catrobat.catroid.common.Constants.CATROBAT_TERMS_OF_USE_URL;
 import static org.catrobat.catroid.ui.settingsfragments.SettingsFragment.SETTINGS_PARROT_AR_DRONE_CATROBAT_TERMS_OF_SERVICE_ACCEPTED_PERMANENTLY;
 import static org.catrobat.catroid.ui.settingsfragments.SettingsFragment.SETTINGS_PARROT_JUMPING_SUMO_CATROBAT_TERMS_OF_SERVICE_ACCEPTED_PERMANENTLY;
+import static org.koin.java.KoinJavaComponent.get;
 
 public class StageResourceHolder implements GatherCollisionInformationTask.OnPolygonLoadedListener {
 	private static final String TAG = StageResourceHolder.class.getSimpleName();
@@ -103,6 +103,7 @@ public class StageResourceHolder implements GatherCollisionInformationTask.OnPol
 	public DroneController droneController;
 
 	private StageActivity stageActivity;
+	private final SpeechRecognitionHolderFactory speechRecognitionHolderFactory = get(SpeechRecognitionHolderFactory.class);
 
 	StageResourceHolder(final StageActivity stageActivity) {
 		this.stageActivity = stageActivity;
@@ -416,7 +417,7 @@ public class StageResourceHolder implements GatherCollisionInformationTask.OnPol
 		}
 
 		if (requiredResourcesSet.contains(Brick.SPEECH_RECOGNITION)) {
-			if (SpeechRecognizer.isRecognitionAvailable(stageActivity)) {
+			if (speechRecognitionHolderFactory.isRecognitionAvailable(stageActivity)) {
 				resourceInitialized();
 			} else {
 				resourceFailed(Brick.SPEECH_RECOGNITION);
@@ -439,7 +440,7 @@ public class StageResourceHolder implements GatherCollisionInformationTask.OnPol
 			Log.e(TAG, e.getMessage());
 		}
 		stageActivity.setupAskHandler();
-		SpeechRecognitionHolder.Companion.getInstance().initSpeechRecognition(stageActivity, this);
+		speechRecognitionHolderFactory.getInstance().initSpeechRecognition(stageActivity, this);
 		stageActivity.pendingIntent = PendingIntent.getActivity(stageActivity, 0,
 				new Intent(stageActivity, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
 		stageActivity.jumpingSumoDeviceController = JumpingSumoDeviceController.getInstance();

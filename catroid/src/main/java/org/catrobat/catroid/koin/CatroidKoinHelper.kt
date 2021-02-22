@@ -1,6 +1,6 @@
 /*
  * Catroid: An on-device visual programming system for Android devices
- * Copyright (C) 2010-2018 The Catrobat Team
+ * Copyright (C) 2010-2021 The Catrobat Team
  * (<http://developer.catrobat.org/credits>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,12 @@
 package org.catrobat.catroid.koin
 
 import android.app.Application
+import com.huawei.hms.api.HuaweiApiAvailability
+import com.huawei.hms.mlsdk.common.MLApplication
 import org.catrobat.catroid.ProjectManager
+import org.catrobat.catroid.stage.HmsSpeechRecognitionHolder
+import org.catrobat.catroid.stage.SpeechRecognitionHolder
+import org.catrobat.catroid.stage.SpeechRecognitionHolderFactory
 import org.catrobat.catroid.ui.recyclerview.fragment.ProjectsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -36,6 +41,7 @@ import org.koin.dsl.module
 
 val componentsModules = module(createdAtStart = true, override = false) {
     single { ProjectManager(androidContext()) }
+    factory { MLApplication.getInstance() }
 }
 
 /**
@@ -46,7 +52,14 @@ val viewModelModules = module {
     viewModel { ProjectsViewModel() }
 }
 
-val myModules = listOf(componentsModules, viewModelModules)
+val stageModule = module {
+    factory { HuaweiApiAvailability.getInstance() }
+    single { SpeechRecognitionHolder() }
+    single { HmsSpeechRecognitionHolder() }
+    single { SpeechRecognitionHolderFactory(get(), get(), get()) }
+}
+
+val myModules = listOf(componentsModules, viewModelModules, stageModule)
 
 fun start(application: Application, modules: List<Module>) {
     startKoin {

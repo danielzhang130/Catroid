@@ -37,7 +37,9 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.common.base.Splitter;
+import com.huawei.hms.api.HuaweiApiAvailability;
 
 import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.R;
@@ -518,31 +520,45 @@ public final class Utils {
 			return;
 		}
 
-		final Intent srIntent = new Intent(ACTION_GET_LANGUAGE_DETAILS);
-		srIntent.setPackage("com.google.android.googlequicksearchbox");
+		if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context)
+				== com.google.android.gms.common.ConnectionResult.SUCCESS) {
+			final Intent srIntent = new Intent(ACTION_GET_LANGUAGE_DETAILS);
+			srIntent.setPackage("com.google.android.googlequicksearchbox");
 
-		context.sendOrderedBroadcast(srIntent, null, new BroadcastReceiver() {
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				final Bundle bundle = getResultExtras(true);
+			context.sendOrderedBroadcast(srIntent, null, new BroadcastReceiver() {
+				@Override
+				public void onReceive(Context context, Intent intent) {
+					final Bundle bundle = getResultExtras(true);
 
-				if (bundle != null) {
-					String defaultLanguage = bundle.getString(EXTRA_LANGUAGE_PREFERENCE);
-					SensorHandler.setListeningLanguageSensor(defaultLanguage);
-					List<String> supportedLanguages = bundle
-							.getStringArrayList(EXTRA_SUPPORTED_LANGUAGES);
-					if (supportedLanguages != null) {
-						SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.clear();
-						SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.addAll(supportedLanguages);
-						SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.remove(defaultLanguage);
-						SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add(0, defaultLanguage);
+					if (bundle != null) {
+						String defaultLanguage = bundle.getString(EXTRA_LANGUAGE_PREFERENCE);
+						SensorHandler.setListeningLanguageSensor(defaultLanguage);
+						List<String> supportedLanguages = bundle
+								.getStringArrayList(EXTRA_SUPPORTED_LANGUAGES);
+						if (supportedLanguages != null) {
+							SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.clear();
+							SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.addAll(supportedLanguages);
+							SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.remove(defaultLanguage);
+							SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add(0, defaultLanguage);
+						} else {
+							Log.w(TAG, "onReceive: EXTRA_SUPPORTED_LANGUAGES is null");
+						}
 					} else {
-						Log.w(TAG, "onReceive: EXTRA_SUPPORTED_LANGUAGES is null");
+						Log.w(TAG, "onReceive: Bundle is null");
 					}
-				} else {
-					Log.w(TAG, "onReceive: Bundle is null");
 				}
-			}
-		}, null, Activity.RESULT_OK, null, null);
+			}, null, Activity.RESULT_OK, null, null);
+		} else if (HuaweiApiAvailability.getInstance().isHuaweiMobileServicesAvailable(context)
+				== com.huawei.hms.api.ConnectionResult.SUCCESS) {
+//			Locale.getDefault().getLanguage()
+			SensorHandler.setListeningLanguageSensor("en-US");
+			SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.clear();
+			SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add("en-US");
+//			SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add(MLSpeechRealTimeTranscriptionConstants.LAN_EN_US);
+//			SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add(MLSpeechRealTimeTranscriptionConstants.LAN_FR_FR);
+//			SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add(MLSpeechRealTimeTranscriptionConstants.LAN_ES_ES);
+//			SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add(MLSpeechRealTimeTranscriptionConstants.LAN_EN_IN);
+//			SPEECH_RECOGNITION_SUPPORTED_LANGUAGES.add(MLSpeechRealTimeTranscriptionConstants.LAN_DE_DE);
+		}
 	}
 }

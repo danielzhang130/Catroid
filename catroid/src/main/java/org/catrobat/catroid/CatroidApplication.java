@@ -1,6 +1,6 @@
 /*
  * Catroid: An on-device visual programming system for Android devices
- * Copyright (C) 2010-2018 The Catrobat Team
+ * Copyright (C) 2010-2021 The Catrobat Team
  * (<http://developer.catrobat.org/credits>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,7 @@ import android.util.Log;
 
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Tracker;
+import com.huawei.hms.mlsdk.common.MLApplication;
 
 import org.catrobat.catroid.koin.CatroidKoinHelperKt;
 import org.catrobat.catroid.utils.Utils;
@@ -38,6 +39,8 @@ import org.catrobat.catroid.utils.Utils;
 import java.util.Locale;
 
 import androidx.multidex.MultiDex;
+
+import static org.koin.java.KoinJavaComponent.get;
 
 public class CatroidApplication extends Application {
 
@@ -77,6 +80,8 @@ public class CatroidApplication extends Application {
 
 		googleAnalytics = GoogleAnalytics.getInstance(this);
 		googleAnalytics.setDryRun(BuildConfig.DEBUG);
+
+		get(MLApplication.class).setApiKey(BuildConfig.HMS_API_KEY);
 	}
 
 	@Override

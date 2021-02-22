@@ -1,6 +1,6 @@
 /*
  * Catroid: An on-device visual programming system for Android devices
- * Copyright (C) 2010-2018 The Catrobat Team
+ * Copyright (C) 2010-2021 The Catrobat Team
  * (<http://developer.catrobat.org/credits>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -83,6 +83,7 @@ import androidx.test.espresso.idling.CountingIdlingResource;
 
 import static org.catrobat.catroid.common.Constants.SCREENSHOT_AUTOMATIC_FILE_NAME;
 import static org.catrobat.catroid.stage.TestResult.TEST_RESULT_MESSAGE;
+import static org.koin.java.KoinJavaComponent.get;
 
 public class StageActivity extends AndroidApplication implements PermissionHandlingActivity, PermissionAdaptingActivity {
 
@@ -231,7 +232,7 @@ public class StageActivity extends AndroidApplication implements PermissionHandl
 		stageListener.finish();
 
 		TextToSpeechHolder.getInstance().shutDownTextToSpeech();
-		SpeechRecognitionHolder.Companion.getInstance().destroy();
+		get(SpeechRecognitionHolderFactory.class).getInstance().destroy();
 
 		BluetoothDeviceService service = ServiceProvider.getService(CatroidService.BLUETOOTH_DEVICE_SERVICE);
 		if (service != null) {

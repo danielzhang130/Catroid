@@ -1,6 +1,6 @@
 /*
  * Catroid: An on-device visual programming system for Android devices
- * Copyright (C) 2010-2018 The Catrobat Team
+ * Copyright (C) 2010-2021 The Catrobat Team
  * (<http://developer.catrobat.org/credits>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,6 +56,7 @@ import java.util.List;
 
 import static org.catrobat.catroid.stage.StageResourceHolder.getProjectsRuntimePermissionList;
 import static org.catrobat.catroid.ui.runtimepermissions.RequiresPermissionTask.checkPermission;
+import static org.koin.java.KoinJavaComponent.get;
 
 public final class StageLifeCycleController {
 	public static final String TAG = StageLifeCycleController.class.getSimpleName();
@@ -137,7 +138,7 @@ public final class StageLifeCycleController {
 					Log.e(TAG, "Disabling NFC foreground dispatching went wrong!", illegalStateException);
 				}
 			}
-			SpeechRecognitionHolder.Companion.getInstance().destroy();
+			get(SpeechRecognitionHolderFactory.class).getInstance().destroy();
 
 			SensorHandler.timerPauseValue = SystemClock.uptimeMillis();
 
