@@ -23,12 +23,12 @@
 
 package org.catrobat.catroid.stage
 
+import android.content.Context
 import android.content.Intent
-import android.os.Build
+import android.media.AudioManager
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.huawei.hms.mlplugin.asr.MLAsrCaptureConstants
 import com.huawei.hms.mlsdk.asr.MLAsrConstants
 import com.huawei.hms.mlsdk.asr.MLAsrListener
@@ -36,11 +36,14 @@ import com.huawei.hms.mlsdk.asr.MLAsrRecognizer
 import org.catrobat.catroid.formulaeditor.SensorHandler
 
 class HmsSpeechRecognitionHolder : SpeechRecognitionHolderInterface {
-    private val TAG = this::class.simpleName
+    private var audioManager: AudioManager? = null
+    private val TAG = this.toString()
     private var speechRecognizer: MLAsrRecognizer? = null
     private lateinit var speechIntent: Intent
     private lateinit var listener: MLAsrListener
     private lateinit var stageActivity: StageActivity
+
+    private val lock = Object()
 
     override lateinit var callback: OnSpeechRecognitionResultCallback
 
@@ -55,68 +58,61 @@ class HmsSpeechRecognitionHolder : SpeechRecognitionHolderInterface {
         stageActivity: StageActivity,
         stageResourceHolder: StageResourceHolder
     ) {
+        Log.w(TAG, "init on ${Thread.currentThread()}")
         this.stageActivity = stageActivity
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
     override fun startListening() {
-//        val audioRecord = AudioRecord.Builder()
-//                 .setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
-//                 .setAudioFormat(
-//                     AudioFormat.Builder()
-//                         .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-//                         .setSampleRate(32000)
-//                         .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-//                         .build())
-//                 .setBufferSizeInBytes(20*1024)
-//                 .build()
-//        audioRecord.startRecording()
-//        stageActivity.handler.postDelayed(
-//            Runnable {
-//                     audioRecord.stop()
-//                audioRecord.release()
-//            }, 5000
-//        )
-        speechRecognizer = MLAsrRecognizer.createAsrRecognizer(stageActivity)
-        speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            .putExtra(
-                MLAsrCaptureConstants.LANGUAGE,
-                SensorHandler.getListeningLanguageSensor()
-            )
-            .putExtra(MLAsrConstants.FEATURE, MLAsrConstants.FEATURE_ALLINONE)
+        synchronized(lock) {
+            Log.w(TAG, "startListening on ${Thread.currentThread()}")
+            destroy()
 
-        listener = object : MLAsrListener {
-            override fun onResults(result: Bundle?) {
-                Log.w(TAG, "onResults")
-                callback.onResult(result?.getString(MLAsrRecognizer.RESULTS_RECOGNIZED).orEmpty())
-                destroy()
+            audioManager = stageActivity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            speechRecognizer = MLAsrRecognizer.createAsrRecognizer(stageActivity)
+            speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .putExtra(
+                    MLAsrCaptureConstants.LANGUAGE,
+                    SensorHandler.getListeningLanguageSensor()
+                )
+                .putExtra(MLAsrConstants.FEATURE, MLAsrConstants.FEATURE_ALLINONE)
+
+            listener = object : MLAsrListener {
+                override fun onResults(result: Bundle?) {
+                    Log.w(TAG, "onResults")
+                    callback.onResult(result?.getString(MLAsrRecognizer.RESULTS_RECOGNIZED).orEmpty())
+                }
+
+                override fun onRecognizingResults(result: Bundle?) {
+                }
+
+                override fun onError(error: Int, errorMessage: String?) = Unit
+                override fun onStartListening() {
+                    Log.d(TAG, "onStartListening")
+                }
+
+                override fun onStartingOfSpeech() {
+                    Log.d(TAG, "onStartingOfSpeech")
+                }
+
+                override fun onVoiceDataReceived(data: ByteArray?, energy: Float, params: Bundle?) =
+                    Unit
+
+                override fun onState(state: Int, params: Bundle?) {
+                }
             }
 
-            override fun onRecognizingResults(result: Bundle?) {
-            }
-
-            override fun onError(error: Int, errorMessage: String?) = Unit
-            override fun onStartListening() {
-                Log.d(TAG, "onStartListening")
-            }
-
-            override fun onStartingOfSpeech() {
-                Log.d(TAG, "onStartingOfSpeech")
-            }
-
-            override fun onVoiceDataReceived(data: ByteArray?, energy: Float, params: Bundle?) =
-                Unit
-
-            override fun onState(state: Int, params: Bundle?) {
-            }
+            speechRecognizer?.setAsrListener(listener)
+            speechRecognizer?.startRecognizing(speechIntent)
         }
-
-        speechRecognizer?.setAsrListener(listener)
-        speechRecognizer?.startRecognizing(speechIntent)
     }
 
     override fun destroy() {
-        speechRecognizer?.destroy()
-        speechRecognizer = null
+        synchronized(lock) {
+            speechRecognizer?.let {
+                Log.w(TAG, "destroy on ${Thread.currentThread()}")
+                it.destroy()
+                speechRecognizer = null
+            }
+        }
     }
 }
